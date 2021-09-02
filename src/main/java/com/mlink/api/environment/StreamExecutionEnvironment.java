@@ -3,6 +3,7 @@ package com.mlink.api.environment;
 import com.mlink.connector.NumberSequenceSource;
 import com.mlink.connector.Source;
 import com.mlink.functions.source.FromIteratorFunction;
+import com.mlink.functions.source.SocketTextStreamFunction;
 import com.mlink.operator.StreamSourceOperator;
 import com.mlink.typeinfo.TypeInformation;
 import java.util.Arrays;
@@ -57,6 +58,18 @@ public class StreamExecutionEnvironment {
     SourceFunction<OUT> sourceFunction = new FromIteratorFunction<>(collections.iterator());
     return addSource(sourceFunction, "Collection source", typeInformation);
   }
+
+  public DataStreamSource<String> socketTextStream(String hostname, int port) {
+    return addSource(new SocketTextStreamFunction(), "Socket stream", null);
+  }
+
+  public DataStreamSource<String> readTextFile() {
+    return null;
+  }
+  public <OUT> DataStreamSource<OUT> readFile() {
+    return null;
+  }
+
 
   public <OUT> DataStreamSource<OUT> addSource(SourceFunction<OUT> sourceFunction,
                                                String sourceName,
