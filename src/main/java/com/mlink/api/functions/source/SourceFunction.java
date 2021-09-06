@@ -1,4 +1,4 @@
-package com.mlink.functions.source;
+package com.mlink.api.functions.source;
 
 public interface SourceFunction<T> {
 

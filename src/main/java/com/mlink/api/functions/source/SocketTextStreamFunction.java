@@ -1,4 +1,4 @@
-package com.mlink.functions.source;
+package com.mlink.api.functions.source;
 
 public class SocketTextStreamFunction implements SourceFunction<String> {
 
