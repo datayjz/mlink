@@ -13,8 +13,8 @@ public class StreamMapOperator<IN, OUT> extends AbstractUdfStreamOperator<OUT,
     MapFunction<IN, OUT>> implements OneInputStreamOperator<IN, OUT> {
 
 
-    public StreamMapOperator(MapFunction<IN, OUT> mapper) {
-        super(mapper);
+    public StreamMapOperator(MapFunction<IN, OUT> mapFunction) {
+        super(mapFunction);
     }
 
     @Override

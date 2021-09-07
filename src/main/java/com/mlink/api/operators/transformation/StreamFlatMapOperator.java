@@ -15,8 +15,8 @@ public class StreamFlatMapOperator<IN, OUT> extends AbstractUdfStreamOperator<OU
 
     private transient Collector<OUT> collector;
 
-    public StreamFlatMapOperator(FlatMapFunction<IN, OUT> flatMapper) {
-        super(flatMapper);
+    public StreamFlatMapOperator(FlatMapFunction<IN, OUT> flatMapFunction) {
+        super(flatMapFunction);
     }
 
     @Override

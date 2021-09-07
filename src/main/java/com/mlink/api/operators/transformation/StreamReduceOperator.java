@@ -18,6 +18,10 @@ public class StreamReduceOperator<IN>
     //TODO 实现state后
     private transient ValueState<IN> values;
 
+    public StreamReduceOperator(ReduceFunction<IN> reduceFunction) {
+        super(reduceFunction);
+    }
+
     @Override
     public void open() throws Exception {
         super.open();
@@ -25,10 +29,6 @@ public class StreamReduceOperator<IN>
         ValueStateDescriptor<IN> descriptor = new ValueStateDescriptor();
         //从StreamOperator中获取分区state
         values = getPartitionedState(descriptor);
-    }
-
-    public StreamReduceOperator(ReduceFunction<IN> reducer) {
-        super(reducer);
     }
 
     @Override

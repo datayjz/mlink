@@ -13,8 +13,8 @@ public class StreamFilterOperator<IN>
     extends AbstractUdfStreamOperator<IN, FilterFunction<IN>>
     implements OneInputStreamOperator<IN, IN> {
 
-    public StreamFilterOperator(FilterFunction<IN> filter) {
-        super(filter);
+    public StreamFilterOperator(FilterFunction<IN> filterFunction) {
+        super(filterFunction);
     }
 
     @Override
