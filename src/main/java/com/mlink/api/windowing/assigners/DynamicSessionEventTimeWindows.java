@@ -1,6 +1,7 @@
 package com.mlink.api.windowing.assigners;
 
 import com.mlink.api.environment.StreamExecutionEnvironment;
+import com.mlink.api.windowing.triggers.EventTimeTrigger;
 import com.mlink.api.windowing.windows.TimeWindow;
 import com.mlink.api.windowing.triggers.Trigger;
 import com.mlink.typeinfo.TypeSerializer;
@@ -35,7 +36,7 @@ public class DynamicSessionEventTimeWindows<T> extends MergingWindowAssigner<T, 
 
     @Override
     public Trigger getDefaultTrigger(StreamExecutionEnvironment environment) {
-        return null;
+        return EventTimeTrigger.create();
     }
 
     @Override
