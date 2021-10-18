@@ -190,6 +190,75 @@ TimestampAssigner默认可用实现比较少：
 
 ![TimestampAssigner](doc/TimestampAssigner.png)
 
+在Flink中有两个地方可以使用Watermark，分为为：直接在source之上使用和非source operator之后。一般使用采用第一种，第二种只有在第一种方式无法使用的情况下使用。
+
+Watermark独立使用实际是没有意义的，一般是结合窗口一起使用。通过Watermark来控制window的窗口触发时机。
+
+# window
+## WindowAssigner
+WindowAssigner负责将每个传入的元素分配到一个或多个window里面。Flink为最常用的用例，提供了预定义是的窗口分配器，
+即：滚动窗口(tumbling window)、滑动窗口(sliding window)、会话窗口(session window)和全局窗口(global window)。除了global 
+window其它窗口都是基于时间的窗口。时间窗口都由[startTime, endTime)来划分窗口，注意不包括endTime。
+
+窗口分配器通过实现```WindowAssigner```来为元素分配窗口的，也就是每个元素都通过WindowAssigner来分配一个或多个窗口。
+预定义窗口如下：
+* TumblingEventTimeWindows、TumblingProcessTimeWindows：用于生成滚动窗口，也就是每个element只会归属到一个window内。
+* SlidingEventTimeWindows、SlidingProcessTimeWindows：用于生成滑动窗口，每个element会被分配到 windowSize / 
+  windowSlide个窗口内。
+* SessionEventTime(/ProcessingTime)Windows、DynamicSessionEventTimeWindows，用于会话窗口，
+如果消息之后超过指定timeout还没有消息到达，则关闭当前会话窗口。会话窗口是为每个element都分配一个window，起始时间为element的time，终止时间为timeout
+  时间。之后将timeout内间隔的窗口都会merge到一个窗口内。
+* GlobalWindows：全局窗口，该窗口不是基于时间的窗口，没有起始、终止时间，所有时刻元素都会发送到这个窗口，该窗口不会触发close，需要借助trigger触发Function计算。
+
+> flink内部Session窗口命名为EventTimeSessionWindows、ProcessingTimeSessionWindows这种命名和其它窗口并没有统一。
+
+## Trigger
+Trigger用于确定窗口内容已经准备好，可以将窗口元素交给窗口函数进行计算并发送给下游。
+触发器核心接口即```Trigger```，Trigger负责触发是否执行计算函数主要有三个方法：onElement、onEventTime和onProcessingTime。
+onElement在接收每个元素都会触发该方法，onEventTime和onProcessingTime在通过Trigger的TriggerContext注册对应时间时调用。
+这三个方法都返回```TriggerResult```，TriggerResult枚举类定义了是否触发窗口函数计算，下面是枚举值：
+```java
+public enum TriggerResult {
+
+    //不做任何处理，窗口继续接收数据
+    CONTINUE(false, false),
+    //触发窗口函数计算，并将结果发送下游。计算完成后，清除窗口数据
+    FIRE_AND_PURGE(true, true),
+    //触发窗口函数计算，并将结果发送下游，窗口数据保留
+    FIRE(true, false),
+    //清楚窗口中数据
+    PURGE(false, true);
+
+    private final boolean fire;
+    private final boolean purge;
+}
+```
+Flink默认提供了以下几个预定义Trigger实现类：
+* EventTimeTrigger，是所有Event类型窗口(比如TumblingEventTimeWindows)的默认触发器，以Watermark到达窗口末尾为触发窗口计算逻辑。
+* ProcessingTimeTrigger，所有ProcessingTime类型窗口默认触发器，以调用onProcessingTime作为窗口触发计算(向TriggerContext注册处理时间)
+* CounterTrigger，计数触发器，内部通过状态管理来维护count，当到达指定个数触发函数计算。
+* PurgingTrigger，清除触发器，以其它触发器作为计算触发规则(构造函数接收其它触发器)，当其它触发器触发计算，则该触发器返回FIRE_AND_PURGE。
+
+## Evictor
+Flink window模型除了可以使用WindowAssigner和Trigger外，还可以使用Evictor。Evictor能够在Trigger触发后和窗口计算前后来移除窗口元素。
+Evictor内部两个方法：evictBefore用于在窗口函数执行前执行，evictAfter用于在窗口函数执行后调用执行。
+Flink预定义了一下三个evictor：
+* TimeEvictor：用于移除窗口内current_time - keep_time前的元素，current time为当前窗口所有元素最大时间戳，keep_time为传递参数。
+* CountEvictor：保留指定数量的元素，超过count则会被移除。
+* DeltaEvictor：基于DeltaFunction和threshold的驱逐实现(没太理解这个到底用来干嘛)。
+
+> 使用evictor会禁止预计算，因为所有元素要先给evictor。另外，因为Flink不保证窗口内元素顺序，所以被驱逐的元素不一定就是窗口头部或尾部元素。
+
+## Allow Lateness
+对于基于event time的窗口，数据可能延迟到达，也就是跟踪事件时间的Watermark已经超过了元素所属窗口结束时间戳。在默认情况下，如果Watermark
+超过窗口末尾时，则后续属于该窗口的延迟数据会被全部删除，Flink允许设置一个Allow 
+Lateness，也就是当Watermark超过窗口末尾后，对于设置的延迟时间内数据不会被删除，而是在去触发窗口计算(取决于Trigger实现)。
+直白一点就是Allow Lateness为Watermark过期数据设置了一个能够允许的延迟时间。
+
+因为延迟数据会再触发窗口计算(比如计算结果重新发送给下游)，这种数据应该被视为先前计算的更新结果，应用程序应该处理这类重复数据。
+
+借助side output特性，可以获取延迟丢弃的数据流。
+
 
 # RPC
 ## akka

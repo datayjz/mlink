@@ -12,7 +12,7 @@ import java.time.Duration;
 
 /**
  * Watermark策略接口，可以自己实现策略(实现createWatermarkGenerator和createTimestampAssignor方法)，也可以使用
- * 共用的Watermark生成器去绑定自定义的Timestamp Assignor。
+ * 公用的Watermark生成器去绑定自定义的Timestamp Assignor。
  *
  * 共用的Watermark生成器有以下4个(都是静态方法可以直接调用)：
  * 1. forBoundedOutOfOrderness，用于无序记录的Watermark，可以指定无序上界，生成器为BoundedOutOfOrdernessWatermarks。
