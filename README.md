@@ -7,12 +7,18 @@ Mlink即Mini Flink，项目初衷是在阅读flink源码过程中，将flink核�
 DataStream API是Flink编写streaming任务的核心API，同时也是SQL和Table API的底层核心支撑。
 ![DataStream API](doc/datastrea_api.png)
 
+> 通过DataStream编程可以实现数据流(data stream)的转换。数据流初始通过各种数据源创建，然后通过DataStream API进程数据流转换操作，最终通过接收器(sink)
+接收数据。可以把DataStream看做immutable的数据集，这个数据集可以是有限或无限的，一旦创建它就不能添加和删除元素，而是只能通过DataStream提供API进行数据流处理。
+
 一个Flink DataStream程序主要包括以下五部分：
 1. 获取执行环境(StreamExecutionEnvironment)。
-2. 添加数据源(Add source)。
+2. 添加/创建数据源(Load/Create source)。
 3. 对数据集进行转换操作(Transformation)。
-4. 指定数据输出(Add sink)。
+4. 指定结果数据输出(Add sink)。
 5. 触发程序执行(Execute)。
+
+ >Flink程序是laze execute的，也就是在main方法中只有你触发了execute执行方法，上面添加数据源和各种转换操作才会被执行。应用程序在没触发execute
+前的各种操作都是被创建并添加到Dataflow graph中，Flink应用程序作为一个整体执行单元来执行。
 
 而DataStream API的源码也是从这五方面出发。
 
@@ -21,11 +27,28 @@ DataStream API是Flink编写streaming任务的核心API，同时也是SQL和Tabl
 * StreamOperator，算子的具体实现，但是算子执行逻辑是通过Function指定的。
 * Function，算子的具体执行逻辑。
 * StreamTask，StreamTask用于执行StreamOperator。
-* Transformation，程序执行时，将DAG转换为StreamGraph。
+* Transformation，程序执行时，将DataStream转换为StreamGraph。
 
 用一个不恰当的线性表示，可以理解为：
 Function -> DataStream -> Operator -> StreamTask
 算子执行逻辑传递给DataStream，DataStream将其给到对应的Operator，最后Operator被StreamTask执行。
+
+
+## 创建执行环境
+创建执行环境作为Flink Application的第一步，主要是创建StreamExecutionEnvironment
+，根据应用程序是否在本地执行来创建对应的LocalStreamEnvironment和RemoteStreamEnvironment。
+
+StreamExecutionEnvironment内部主要包含以下五部分内容：
+ 1. 用于构建StreamExecutionEnvironment的静态工厂方法，根据程序是否在本地执行，分别创建LocalStreamEnvironment
+    和RemoteStreamEnvironment。
+ 2. Stream job基础配置，比如算子默认并发度、最大并发度(rescaling上限)、operator chaining、buffer timeout等。
+ 3. checkpoint相关配置。
+ 4. 创建data source data stream，核心向addSource方法中传递一个SourceFunction。
+ 5. 触发程序执行，也就是execute或executeAsync。触发执行首先会根据Transformation来构建StreamGraph。
+
+LocalStreamEnvironment是在本地后台嵌入式启动一个Flink集群，通过多线线程的方式来执行应用程序。LocalStreamEnvironment核心是传递一个local部署配置。
+RemoteStreamEnvironment是通过指定远端Flink集群的master(JobManager)节点来提交作业的。
+
 
 ## Function
 com.mlink.api.functions定义了Flink中基础Function，主要包括以下Function：
