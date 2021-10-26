@@ -49,6 +49,26 @@ StreamExecutionEnvironment内部主要包含以下五部分内容：
 LocalStreamEnvironment是在本地后台嵌入式启动一个Flink集群，通过多线线程的方式来执行应用程序。LocalStreamEnvironment核心是传递一个local部署配置。
 RemoteStreamEnvironment是通过指定远端Flink集群的master(JobManager)节点来提交作业的。
 
+这部分主要有两部分需要剖析：
+* StreamGraph如何生成。
+* 如何提交执行。
+
+## DataStream
+DataStream中定义了对数据流的操作，核心逻辑是接收对应的Function，然后将其传递给对应的Operator
+(比如map操作，会将MapFunction给StreamMapOperator)，最后DataStream再将Operator给到Transformation。
+com.mlink.api.datastream定义了DataStream相关API，对于DataStream api基础操作主要分为四部分：
+
+* DataStreamSource，由StreamExecutionEnvironment创建source时返回的DataStream。也是通过DataStream
+  API编排作业的开始部分。DataStreamSource内部主要接收StreamExecutionEnvironment中指定的source operator。
+* DataStream，是DataStream API编排主要操作类，也是DataStreamSource的父类
+  (中间还有一个SingleOutputStreamOperator，这里定义感觉比较混乱，里面定义了一些chain策略、并发设置、资源设置等，感觉直接放到DataStream影响不大)。 
+  关于DataStream的UML可以看下图1。DataStream中主要定义了operator的各种transformation(比如map、flatMap、reduce等)以及sink操作。
+   * 
+* ConnectedStreams，对DataStream进行connect操作而创建的stream，可在之上使用CoXxxFunction和keyBy，function执行后在进行数据流合并。
+* DataStreamSink，通过对DataStream调用addSink而创建输出数据流。
+* KeyedStream，对DataStream使用KeyBy(KeySelector)分区而创建的数据流，可以在此之上运行大部分DataStream操作。
+
+![DataStream 图1](doc/datastream_api_1.png)
 
 ## Function
 com.mlink.api.functions定义了Flink中基础Function，主要包括以下Function：
@@ -98,37 +118,67 @@ com.mlink.api.operators定义了Flink中基础的Operator，这里的Operator类
 operator抽象基类不是运行udf的operator，所以直接实现了AbstractStreamOperator。
 ![operator对应关系](doc/StreamOperator.png)
 
-## DataStream
-DataStream中定义了对数据流的操作，核心逻辑是接收对应的Function，然后将其传递给对应的Operator
-(比如map操作，会将MapFunction给StreamMapOperator)，最后DataStream再将Operator给到Transformation。
-com.mlink.api.datastream定义了DataStream相关API，对于DataStream api基础操作主要分为四部分：
- * DataStreamSource，由StreamExecutionEnvironment创建source时返回的DataStream。也是通过DataStream 
-   API编排作业的开始部分。DataStreamSource内部主要有两个构造方法，分别接收source operator和source connector来指定数据源。
- * DataStream，包括了DataStream的转换操作(比如map、flatMap、reduce等)以及sink操作。
- * DataStreamSink，通过对DataStream调用addSink而创建输出数据流。
- * KeyedStream，对DataStream使用KeyBy(KeySelector)分区而创建的数据流，可以在此之上运行大部分DataStream操作。
-
 ## Transformation
-上面我们说过，Transformation用于将DAG作业转换为StreamGraph以便后续转成JobGraph来执行。Transformation和Operator基本相对应。
-com.mlink.api.transformation定义了Transformation相关的代码，主要包括以下几类：
- * SourceTransformation，对应source connector的Transformation。
- * SinkTransformation，对应sink connector的Transformation。
- * OneInputTransformation，对应OneInputStreamOperator的Transformation。
- * TwoInputTransformation，对应TwoInputStreamOperator的Transformation。
+通过DataStream API编程中，每个DataStream的创建(比如map、union、sink等)
+都会同时在该DataStream实体上创建一个对应的Transformation，Transformation的入参就包含该Transformation所对应的StreamOperator。
 
-上面实现类实现了Transformation抽象基类和PhysicalTransformation抽象基类。PhysicalTransformation
-对应了我们的所使用的各类物理Operator。比如source、map、sink等等。
+* Transformation：Transformation是所有转换操作的顶级抽象类，记录了当前转换的id、name(用于可视化和log)、outputType
+  、parallelism、MaxParallelism、bufferTimeout、资源等信息。该类中定义了两个抽象方法：```getTransitivePredecessors()
+  ```和```getInputs()```，分别代表返回包含当前Transformation内的所有上游Transformation列表和返回当前Transformation的直接上游。
+* PhysicalTransformation：PhysicalTransformation是Transformation 直接子类，也是大部分算子所对应的转换操作的父类。
+  它表示当前是一个具体operator转换，比如map 、flatmap 等等所对应的transformation的父类都是该类。
+  PhysicalTransformation还提供了配置Chaining Strategy的抽象方法。
+* LegacySourceTransformation：LegacySourceTransformation代表一个source 
+  operator。因为没有input，所以没有实际转换操作，但它是拓扑的root。LegacySourceTransformation中TransitivePredecessor
+  只包含自身，input为null。
+  > Transformation中持有的Operator都是通过StreamOperatorFactory来获取对应的operator的，而不是直接持有operator。
+* LegacySinkTransformation，和上面source一样，代表一个stream sink。LegacySinkTransformation入参带有其对应的input 
+  Transformation(input的getTransitivePredecessors + 
+  this就是当前Transformation的所有转换，而input就是当前Transformation的getInput)。
+* SourceTransformation/SinkTransformation：和上面Legacy 
+  source/sink对应。不过SourceTransformation和SinkTransformation不对应operator，而是对应目前属于实验阶段的新Source和Sink
+  (fromSource和sinkTo)。
+* OneInputTransformation：和OneInputStreamOperator相对应。内容基本和LegacySinkTransformation一样。
+* TwoInputTransformation：和TwoInputStreamOperator相对应，接收两个input 
+  transformation，结果返回一个stream。整体内容和OneInputTransformation一直，只不过对应两个input 
+  transformation，所以getInput也就包括了这两个input。
+* ReduceTransformation：对应了KeyedStream中的reduce操作，和上面不同的是KeyedStream没有传递一个operator
+  ，而是直接将ReduceFunction传递给了ReduceTransformation。其它内容基本和OneInputTransformation一致。
+* TimestampsAndWatermarksTransformation：该transformation对应了DataStream.
+  assignTimestampsAndWatermarks分配watermark的操作。与上面唯一不同点在于，会将WatermarkStrategy传递给该transformation。
+* AbstractBroadcastStateTransformation：broadcast state转换基类。
+* BroadcastStateTransformation：是AbstractBroadcastStateTransformation的non-keyed实现。由BroadcastConnectedStream中transform创建。
+* KeyedBroadcastStateTransformation：是AbstractBroadStateTransformation的keyed
+  实现。与BroadcastStateTransformation唯一不同点在于需要传递一个KeySelector。由BroadcastConnectedStream中transform创建。
+* AbstractMultipleInputTransformation/MultipleInputTransformation
+  /KeyedMultipleInputTransformation：对应MultipleInputStreamOperator，看源码主要用于table的batch操作。
+> 以上都是PhysicalTransformation相关子类实现，会创建对应的物理operator。除了PhysicalTransformation之外，Transformation
+> 还包含一些其它直接子类，比如UnionTransformation等。
+* UnionTransformation：对多个input transformation进行合并。该转换不会创建物理算子，只会影响上下游算子的连接。该Transformation
+  内部实现会接受一个list的Transformation，getInputs和getTransitivePredecessors都是通过该input列表获取。name
+  、类型、并发等都是从inputList.get(0)来获取的。该转换由DataStream中union算子创建。
+* PartitionTransformation：表示对输入元素进行partition。该转换不会创建物理算子，只会影响上下游算子的连接。PartitionTransformation
+  不同于上面，会接收一个```StreamPartition```。该转换由keyBy(KeyedStreams创建)、partitionCustom、broadcast、shuffle、forward、rebalance、rescale、global操作来创建。
+* SideOutputTransformation：表示上游算子的旁路输出(side output)
+  。该转换不会创建物理算子，只会影响上下游算子的连接。该转换唯一差异点在于入参需要OutputTag。
+* FeedbackTransformation：对应迭代流IterativeStream，该Transformation代表拓扑中的一个反馈点(feedback point)
+  。该Transformation接收一个input transformation，在该transformation创建feedback point，同时允许你添加多个反馈边
+  (feedback edge transformation)。需要注意的是，feedback edge需要和feedback point的并发度一致。
+* CoFeedbackTransformation：和FeedbackTransformation功能类似，对应ConnectedIterativeStream。 但是允许返回元素类型和上游transformation
+  类型不一致。之所以这样是因为CoFeedbackTransformation之后只会有TwoInputTransformation。在拓扑中上游Transformation
+  也不会连接CoFeedbackTransformation，而是直接连接TwoInputTransformation。
+  
+![Flink Transformation](doc/Transformation.png)
 
-在构建Transformation过程，现在主要接收StreamOperatorFactory来创建Operator，即便传递过来的是具体Operator
-，也会转换为StreamOperatorFactory。所以这里在com.mlink.api.operators下面引入了operator factory实现。
+在构建Transformation过程，主要接收StreamOperatorFactory来创建Operator，即便传递过来的是具体Operator
+，也会转换为StreamOperatorFactory。
 
+有了Transformation之后就可以用来构建StreamGraph了。
 
-## 执行环境
-StreamExecutionEnvironment从功能上主要分为两大类：
-* 提供了控制程序执行的方法，比如设置并发度、checkpoint设置、执行方式等。
-* 与外界进行交互。
+# 构图
+我们通过DataStream API来编排streaming作业后，会通过StreamExecutionEnvironment来触发任务执行(execute)
+，而execute的第一步就是生成StreamGraph。
 
-而对于DataStream API来说，StreamExecutionEnvironment的主要作用就是创建数据源。
 
 # Event time和watermark
 我们知道Flink支持三种时间类型，分别是：
