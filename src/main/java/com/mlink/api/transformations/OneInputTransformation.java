@@ -1,4 +1,4 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
 import com.mlink.api.functions.KeySelector;
@@ -12,8 +12,6 @@ import java.util.List;
 
 /**
  * OneInputTransformation对应OneInputStreamOperator
- * @param <IN>
- * @param <OUT>
  */
 public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT> {
 
@@ -44,7 +42,7 @@ public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT>
 
     @Override
     public void setChainingStrategy(ChainingStrategy strategy) {
-        //OperatorFactory set TODO
+        operatorFactory.setChainingStrategy(strategy);
     }
 
     @Override

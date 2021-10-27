@@ -1,4 +1,4 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.mlink.typeinfo.TypeInformation;
 import java.util.List;
@@ -18,6 +18,11 @@ public abstract class Transformation<OUT> {
 
     //Transformation并行度
     private int parallelism;
+
+    private int maxParallelism = -1;
+
+    protected long bufferTimeout = -1;
+
     /**
      * 用于为每个Transformation指定唯一ID
      */
@@ -34,9 +39,14 @@ public abstract class Transformation<OUT> {
         this.parallelism = parallelism;
     }
 
-    public abstract List<Transformation<?>> getTransitivePredecessors();
     /**
-     * 返回转换图中当前Transformation的直接前任Transformation。
+     * 返回包含当前Transformation的所有上游Transformation
+     * @return
+     */
+    public abstract List<Transformation<?>> getTransitivePredecessors();
+
+    /**
+     * 返回该Transformation的直接上游输入Transformation
      */
     public abstract List<Transformation<?>> getInputs();
 
@@ -50,6 +60,26 @@ public abstract class Transformation<OUT> {
 
     public int getParallelism() {
         return parallelism;
+    }
+
+    public void setParallelism(int parallelism) {
+        this.parallelism = parallelism;
+    }
+
+    public int getMaxParallelism() {
+        return maxParallelism;
+    }
+
+    public void setMaxParallelism(int maxParallelism) {
+        this.maxParallelism = maxParallelism;
+    }
+
+    public void setBufferTimeout(long bufferTimeout) {
+        this.bufferTimeout = bufferTimeout;
+    }
+
+    public long getBufferTimeout() {
+        return bufferTimeout;
     }
 
     public TypeInformation<OUT> getOutputType() {

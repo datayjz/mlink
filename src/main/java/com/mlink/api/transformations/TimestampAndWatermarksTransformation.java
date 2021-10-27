@@ -1,4 +1,4 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
 import com.mlink.api.eventtime.WatermarkStrategy;

@@ -170,6 +170,19 @@ operator抽象基类不是运行udf的operator，所以直接实现了AbstractSt
   
 ![Flink Transformation](doc/Transformation.png)
 
+上面```PartitionTransformation```涉及两个变量这里需要详细说下，分别是用于数据交换的```StreamExchangeMode```
+和用于对元素分区的```StreamPartitioner```。
+StreamExchangeMode枚举定义了数据在operator间传输的方式：
+* PIPELINED：producer和consumer同时在线，producer生产出后的数据立即被consumer消费。
+* BATCH：producer生产完整体全部数据后，consumer在启动来消费数据。和MapReduce一样，Map task处理完数据后写中间存储，然后Reduce算子拉起消费处理。
+* UNDEFINED：框架根据自身来选择PIPELINED还是BATCH。
+
+StreamPartitioner定义了元素分区策略，也就是上下游operator间建立了通信channel，那么当前元素来了后应该写到哪个channel里面去。
+Flink预定义了以下Partition分区策略：
+* KeyGroupStreamPartitioner：
+* 
+![Flink StreamPartitioner](doc/StreamPartitioner.png)
+
 在构建Transformation过程，主要接收StreamOperatorFactory来创建Operator，即便传递过来的是具体Operator
 ，也会转换为StreamOperatorFactory。
 
@@ -177,7 +190,50 @@ operator抽象基类不是运行udf的operator，所以直接实现了AbstractSt
 
 # 构图
 我们通过DataStream API来编排streaming作业后，会通过StreamExecutionEnvironment来触发任务执行(execute)
-，而execute的第一步就是生成StreamGraph。
+，而execute的第一步就是生成StreamGraph。在DataStream API中所有创建新算子的操作，都会回调```StreamExecutionEnvironment.
+addOperator```方法，而该方法接收的就是算子的transformation。StreamExecutionEnvironment中维护了Transformation的list
+，而在生成StreamGraph时就是使用的该Transformation list。
+
+首先我们看下StreamGraph是什么，首先我们Flink具备流批一体的分布式处理引擎，无论流作业还是批作业都会转换成pipeline的形式来执行。目前对于流作业，pipeline
+的构建就是通过```StreamGraph```来完成的，而批作业的pipeline是通过```Plan```来构建的(之后流批会统一)。
+
+所以StreamGraph就是Flink中用于构建流式pipeline的流拓扑(streaming topology)，```StreamGraph```包含了构建```JobGraph```的全部信息。
+
+![Flink Pipeline](doc/Pipeline.png)
+
+StreamGraph由```StreamNode```和```StreamEdge```组成。
+* StreamNode对应了Streaming程序中的一个operator和该operator的所有属性(比如id、operator name、buffer timeout、
+  slot sharing group、输入/输出序列化器等)。每个StreamNode内部包含了输入StreamEdge列表和输出StreamEdge列表。值得注意的是StreamNode
+  也会被指定执行时所使用的StreamTask(比如SourceStreamTask、OneInputStreamTask等)
+  ，该task是在生成StreamGraph时根据operator类型来指定的task类型。
+* StreamEdge用于连接两个StreamNode，edge的输入node成为source，输出node成为target。StreamEdge内部主要包括了input/output id
+  (sourceId/targetId)、分区器(StreamPartitioner)、buffer timeout以及数据交换方式(StreamExchangeMode)。
+* StreamGraph作为主体，内部维护了dag graph的StreamNode信息(edge存储存储在了node的inputEdge和outputEdge)
+  ，需要注意的是，StreamGraph中不直接使用StreamNode，而是使用StreamNode的id(vertexID)
+  作为索引来使用，该id就是Transformation中的id，从1开始递增生成，保证整个job id唯一。
+
+StreamGraph是由```StreamGraphGenerator```来生成的，StreamGraphGenerator根据DataStream中创建的Transformation 
+列表信息来构建StreamGraph。
+StreamGraphGenerator的核心方法就是```generate()```来生成StreamGraph。generate内部主要做了两部分事情：
+1. 根据配置信息配置StreamGraph，比如：是否chaining、job name、state backend、savepoint目录、全局数据交换方式等。
+2. 使用transformation对应的transformation translator对Transformation进行转换。```TransformationTranslator```
+   会根据执行模式(batch/streaming)来将transformation转换为运行时实现。TransformationTranslator转换的过程其实就是创建StreamNode
+   (调用StreamGraph.addOperator方法)的过程，并且根据Transformation的input(该TF的直接上游)来创建edge(调用StreamGraph.
+   addEdge)。
+
+StreamGraphGenerator构图中有两点需要注意：
+* StreamGraphGenerator会从sink的Transformation开始递归遍历，来构建StreamGraph(实际源码没有看到从sink遍历的实现，待确定)。
+* 对于partitioning、split/select和union操作实际不会创建SteamNode，而是会创建一个虚拟节点(virtual node)
+  。并且虚拟节点和下游node之间建立的edge会在之后把虚拟节点抹掉，虚拟节点的下游node会直接和虚拟节点的上游node连接。
+  比如有：Map-1 -> HashPartition-2 -> Map-3，这其中数字就是transformation id(上面我们说了从1递增)
+  ，对于Map-1会直接转换创建对应的StreamNode(id对应1)。而HashPartition会通过```Transformation.getNewId()```
+  来获取一个最新的虚拟ID(也就是4)。然后继续转换最后的Map-3，这时候Map-3会创建和上游的edge，这时候是 HashPartition-4 -> 
+  Map-3，在StreamGraph中实际会找HashPartition虚拟节点对应的上游实际节点，也就是Map-1，最终的就是Map-1 -> Map-3。
+  
+至此StreamGraph完成构建，而StreamExecutionEnvironment中的```execute```接下来就会将该```StreamGraph```交给Client
+。Client在将```StreamGraph```转换为```JobGraph``` 。
+
+下面我们再看StreamGraph -> JobGraph前先看下StreamGraph中将Transformation转换StreamGraph(Node/Edge)的Translator。
 
 
 # Event time和watermark

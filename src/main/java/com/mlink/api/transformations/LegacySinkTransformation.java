@@ -1,8 +1,10 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
 import com.mlink.api.operators.ChainingStrategy;
-import com.mlink.connector.Sink;
+import com.mlink.api.operators.factory.SimpleOperatorFactory;
+import com.mlink.api.operators.factory.StreamOperatorFactory;
+import com.mlink.api.operators.sink.StreamSinkOperator;
 import java.util.Collections;
 import java.util.List;
 
@@ -10,22 +12,20 @@ import java.util.List;
  * sink connector的Transformation
  * @param <IN>
  */
-public class SinkTransformation<IN> extends PhysicalTransformation<Object> {
+public class LegacySinkTransformation<IN> extends PhysicalTransformation<Object> {
 
     private final Transformation<IN> input;
 
-    private final Sink<IN> sinkConnector;
+    private final StreamOperatorFactory<Object> operatorFactory;
 
-    private ChainingStrategy chainingStrategy;
-
-    public SinkTransformation(Transformation<IN> input,
-                              String name,
-                              Sink<IN> sinkConnector,
-                              int parallelism) {
-        //TODO type
+    public LegacySinkTransformation(Transformation<IN> input,
+                                    String name,
+                                    StreamSinkOperator<IN> sinkOperator,
+                                    int parallelism) {
+        //sink无输出，所以输出类型为null
         super(name, null, parallelism);
         this.input = input;
-        this.sinkConnector = sinkConnector;
+        this.operatorFactory = SimpleOperatorFactory.of(sinkOperator);
     }
 
     @Override
@@ -43,10 +43,6 @@ public class SinkTransformation<IN> extends PhysicalTransformation<Object> {
 
     @Override
     public void setChainingStrategy(ChainingStrategy strategy) {
-        this.chainingStrategy = strategy;
-    }
-
-    public ChainingStrategy getChainingStrategy() {
-        return chainingStrategy;
+        operatorFactory.setChainingStrategy(strategy);
     }
 }

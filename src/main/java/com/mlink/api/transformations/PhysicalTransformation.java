@@ -1,10 +1,11 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.mlink.api.operators.ChainingStrategy;
 import com.mlink.typeinfo.TypeInformation;
 
 /**
- * 用于创建对应物理实际执行operator的Transformation，比如source、map、sink等。可以设置自己的chain策略。
+ * 该Transformation对应物理的operator，比如map、source等。与之对应的partition、union不会对应物理算子，它们的Transformation
+ * 只是用于保证上下游按照指定方式连接。
  */
 public abstract class PhysicalTransformation<OUT> extends Transformation<OUT> {
 

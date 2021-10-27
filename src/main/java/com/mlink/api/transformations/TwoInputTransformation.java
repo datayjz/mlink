@@ -1,4 +1,4 @@
-package com.mlink.api.transformation;
+package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
 import com.mlink.api.operators.ChainingStrategy;
@@ -15,6 +15,8 @@ public class TwoInputTransformation<IN1, IN2, OUT> extends PhysicalTransformatio
 
     private final Transformation<IN1> input1;
     private final Transformation<IN2> input2;
+
+    private final StreamOperatorFactory<OUT> operatorFactory;
 
     public TwoInputTransformation(Transformation<IN1> input1,
                                   Transformation<IN2> input2,
@@ -35,11 +37,20 @@ public class TwoInputTransformation<IN1, IN2, OUT> extends PhysicalTransformatio
         super(name, outputType, parallelism);
         this.input1 = input1;
         this.input2 = input2;
+        this.operatorFactory = operatorFactory;
+    }
+
+    public Transformation<IN1> getInput1() {
+        return input1;
+    }
+
+    public Transformation<IN2> getInput2() {
+        return input2;
     }
 
     @Override
     public void setChainingStrategy(ChainingStrategy strategy) {
-
+        this.operatorFactory.setChainingStrategy(strategy);
     }
 
     @Override
