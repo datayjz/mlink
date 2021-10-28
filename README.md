@@ -179,8 +179,20 @@ StreamExchangeMode枚举定义了数据在operator间传输的方式：
 
 StreamPartitioner定义了元素分区策略，也就是上下游operator间建立了通信channel，那么当前元素来了后应该写到哪个channel里面去。
 Flink预定义了以下Partition分区策略：
-* KeyGroupStreamPartitioner：
-* 
+* KeyGroupStreamPartitioner：对应DataStream的keyBy，分区基于KeyGroup。涉及key、当前算子并发、算子最大并发三个变量。
+  1. 首先对key求hash(二次hash)，然后对最大并发取余来计算出该key所落在的KeyGroup index上。
+  2. 然后计算该keyGroupIndex所归属的operator索引。一个operator 索引对应一个并发task(keyGroupIndex * parallelism / 
+     maxParallelism)。
+  3. operator 并行度task就对应了keyBy的channel个数，也就选出来了该record发送到哪个channel 并发task上。
+* BroadcastPartitioner：对应DataStream的broadcast，用于选择所有输出channel，将元素广播给所有下游。
+* ForwardPartitioner：对应DataStream的forward，用于将元素定向发送到本地下游算子task上。
+* GlobalPartitioner：对应DataStream的global，用于将所有算子发送到下游operator的第一个task上。
+* RebalancePartitioner：对应DataStream的rebalance，通过round-robin模式将元素均匀分给下游所有算子task。
+* RescalePartitioner：对应DataStream的rescale，同样通过round-robin模式将元素均匀分给下游，但是相较RebalancePartitioner
+  ，该算法取决于上下游并发，比如上游并发2，下游并发4，则第一个并发固定向下游两个算子并发发送元素，另一个同理。(Partitioner实现细节没看出差异)
+* ShufflePartitioner：对应DataStream的shuffle，基于Random纯随机选择下游channel。
+* CustomPartitioner：对应DataStream的partitionCustom，用于自定义Partitioner。
+
 ![Flink StreamPartitioner](doc/StreamPartitioner.png)
 
 在构建Transformation过程，主要接收StreamOperatorFactory来创建Operator，即便传递过来的是具体Operator
