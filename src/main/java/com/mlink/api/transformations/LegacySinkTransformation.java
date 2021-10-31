@@ -45,4 +45,8 @@ public class LegacySinkTransformation<IN> extends PhysicalTransformation<Object>
     public void setChainingStrategy(ChainingStrategy strategy) {
         operatorFactory.setChainingStrategy(strategy);
     }
+
+    public StreamOperatorFactory<Object> getOperatorFactory() {
+        return operatorFactory;
+    }
 }

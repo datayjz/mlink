@@ -11,14 +11,14 @@ import com.mlink.state.ValueStateDescriptor;
  * Reduce operator，执行ReduceFunction。借助ValueState实现记录历史数据。
  * Flink原类叫StreamGroupReduceOperator。
  */
-public class StreamReduceOperator<IN>
+public class StreamGroupedReduceOperator<IN>
     extends AbstractUdfStreamOperator<IN, ReduceFunction<IN>>
     implements OneInputStreamOperator<IN, IN> {
 
     //TODO 实现state后
     private transient ValueState<IN> values;
 
-    public StreamReduceOperator(ReduceFunction<IN> reduceFunction) {
+    public StreamGroupedReduceOperator(ReduceFunction<IN> reduceFunction) {
         super(reduceFunction);
     }
 

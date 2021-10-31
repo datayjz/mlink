@@ -57,4 +57,8 @@ public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT>
     public List<Transformation<?>> getInputs() {
         return Collections.singletonList(input);
     }
+
+    public StreamOperatorFactory<OUT> getOperatorFactory() {
+        return operatorFactory;
+    }
 }

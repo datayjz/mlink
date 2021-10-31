@@ -56,4 +56,8 @@ public class ReduceTransformation<IN, K> extends PhysicalTransformation<IN> {
     public List<Transformation<?>> getInputs() {
         return Collections.singletonList(input);
     }
+
+    public ReduceFunction<IN> getReducer() {
+        return reducer;
+    }
 }

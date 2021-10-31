@@ -56,4 +56,8 @@ public class LegacySourceTransformation<OUT> extends PhysicalTransformation<OUT>
     public Boundedness getBoundedness() {
         return boundedness;
     }
+
+    public StreamOperatorFactory<OUT> getOperatorFactory() {
+        return operatorFactory;
+    }
 }
