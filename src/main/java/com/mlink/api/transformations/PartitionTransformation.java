@@ -45,4 +45,12 @@ public class PartitionTransformation<OUT> extends Transformation<OUT> {
     public List<Transformation<?>> getInputs() {
         return Collections.singletonList(input);
     }
+
+    public StreamPartitioner<OUT> getPartitioner() {
+        return partitioner;
+    }
+
+    public StreamExchangeMode getExchangeMode() {
+        return exchangeMode;
+    }
 }

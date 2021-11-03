@@ -1,22 +1,24 @@
 package com.mlink.api.datastream;
 
 import com.mlink.api.environment.StreamExecutionEnvironment;
+import com.mlink.api.eventtime.WatermarkStrategy;
 import com.mlink.api.functions.KeySelector;
+import com.mlink.api.functions.ProcessFunction;
 import com.mlink.api.functions.sink.PrintSinkFunction;
 import com.mlink.api.functions.sink.SinkFunction;
 import com.mlink.api.functions.transformation.FilterFunction;
 import com.mlink.api.functions.transformation.FlatMapFunction;
+import com.mlink.api.ProcessOperator;
 import com.mlink.api.operators.sink.StreamSinkOperator;
 import com.mlink.api.operators.transformation.StreamFilterOperator;
 import com.mlink.api.operators.transformation.StreamFlatMapOperator;
-import com.mlink.api.transformation.OneInputTransformation;
-import com.mlink.api.transformation.Transformation;
+import com.mlink.api.transformations.OneInputTransformation;
+import com.mlink.api.transformations.TimestampAndWatermarksTransformation;
+import com.mlink.api.transformations.Transformation;
 import com.mlink.api.functions.transformation.MapFunction;
 import com.mlink.api.operators.OneInputStreamOperator;
 import com.mlink.api.operators.transformation.StreamMapOperator;
 import com.mlink.typeinfo.TypeInformation;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * DataStream API是Flink编写streaming任务的核心API，同时也是SQL和Table API的底层核心支撑。
@@ -62,7 +64,8 @@ public class DataStream<IN> {
             new OneInputTransformation<>(this.transformation,
                 operatorName,
                 operator,
-                outTypeInfo);
+                outTypeInfo,
+                environment.getParallelism());
 
         return new SingleOutputStreamOperator<>(environment, transformation);
     }
@@ -122,6 +125,18 @@ public class DataStream<IN> {
 //        return new BroadcastConnectedStream<>(this.environment, this, broadcastStream);
 //    }
 
+    public <OUT> SingleOutputStreamOperator<OUT> process(ProcessFunction<IN, OUT> processFunction) {
+        //TODO type extract
+        TypeInformation<OUT> outputType = null;
+        return this.process(processFunction, outputType);
+    }
+
+    public <OUT> SingleOutputStreamOperator<OUT> process(ProcessFunction<IN, OUT> processFunction,
+                                                         TypeInformation<OUT> outputType) {
+
+        ProcessOperator<IN, OUT> processOperator = new ProcessOperator<>(processFunction);
+        return transform("Process", outputType, processOperator);
+    }
 
     public StreamExecutionEnvironment getExecutionEnvironment() {
         return environment;
@@ -135,5 +150,16 @@ public class DataStream<IN> {
 
     public Transformation<IN> getTransformation() {
         return transformation;
+    }
+
+
+    //-------------------------------Timestamp和Watermark相关---------------------------//
+    public SingleOutputStreamOperator<IN> assignTimestampAndWatermark(
+        WatermarkStrategy<IN> watermarkStrategy) {
+
+        TimestampAndWatermarksTransformation<IN> transformation =
+            new TimestampAndWatermarksTransformation<>("Timestamps/Watermarks", 1,
+                getTransformation(), watermarkStrategy);
+        return new SingleOutputStreamOperator<>(getExecutionEnvironment(), transformation);
     }
 }

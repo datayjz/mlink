@@ -401,6 +401,21 @@ Lateness，也就是当Watermark超过窗口末尾后，对于设置的延迟时
 借助side output特性，可以获取延迟丢弃的数据流。
 
 
+# Side output
+Flink提供的side output能够在DataStream操作结果之外，额外添加多个旁路输出流(side output stream)。这些side output 
+stream可以和DataStream中结果数据类型不一样，同时不同side output间类型也可以不一样。
+side output通过OutputTag来标识一个旁路输出流，OutputTag除了有唯一ID外，还有该side output所对应的接收数据类型。
+
+使用Side output有两个步骤。第一步通过以下Function的Context来注册一个side 
+output；第二步通过DataStream的getSideOutput方法来获取之前注册的side output(返回的是DataStream)，然后对其操作。
+
+* ProcessFunction
+* KeyedProcessFunction
+* CoProcessFunction
+* KeyedCoProcessFunction
+* ProcessWindowFunction
+* ProcessAllWindowFunction
+
 # RPC
 ## akka
 我们知道Flink集群节点间数据通信是通过akka来完成的。akka是actor模型在scala/java上的实现，用于构建弹性、可扩展、快速响应的分布式应用程序。使用akka具有以下优势：

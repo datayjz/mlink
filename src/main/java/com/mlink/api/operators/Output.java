@@ -1,5 +1,7 @@
 package com.mlink.api.operators;
 
+import com.mlink.api.common.OutputTag;
+import com.mlink.record.StreamRecord;
 import com.mlink.util.Collector;
 
 /**
@@ -8,4 +10,5 @@ import com.mlink.util.Collector;
 public interface Output<T> extends Collector<T> {
 
 
+    <X> void collect(OutputTag<X> outputTag, StreamRecord<T> record);
 }

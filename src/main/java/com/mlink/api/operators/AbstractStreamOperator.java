@@ -1,7 +1,9 @@
 package com.mlink.api.operators;
 
+import com.mlink.api.eventtime.Watermark;
 import com.mlink.api.functions.context.StreamingRuntimeContext;
 import com.mlink.record.StreamRecord;
+import com.mlink.runtime.tasks.ProcessingTimeService;
 import com.mlink.state.ValueState;
 import com.mlink.state.ValueStateDescriptor;
 
@@ -14,9 +16,14 @@ import com.mlink.state.ValueStateDescriptor;
  */
 public abstract class AbstractStreamOperator<OUT> implements StreamOperator<OUT> {
 
+    protected ChainingStrategy chainingStrategy = ChainingStrategy.HEAD;
+
     protected transient Output<StreamRecord<OUT>> output;
 
     private transient StreamingRuntimeContext runtimeContext;
+
+    protected transient ProcessingTimeService processingTimeService;
+
 
     public void setup() {
         this.runtimeContext = new StreamingRuntimeContext();
@@ -43,5 +50,13 @@ public abstract class AbstractStreamOperator<OUT> implements StreamOperator<OUT>
     @Override
     public Object getCurrentKey() {
         return null;
+    }
+
+    public ProcessingTimeService getProcessingTimeService() {
+        return processingTimeService;
+    }
+
+    public void processWatermark(Watermark watermark) throws Exception {
+        //output.emit(watermark);
     }
 }

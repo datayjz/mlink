@@ -12,7 +12,7 @@ import com.mlink.api.functions.source.FromIteratorFunction;
 import com.mlink.api.functions.source.SocketTextStreamFunction;
 import com.mlink.api.graph.StreamGraphGenerator;
 import com.mlink.api.operators.source.StreamSourceOperator;
-import com.mlink.api.transformation.Transformation;
+import com.mlink.api.transformations.Transformation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -285,12 +285,18 @@ public class StreamExecutionEnvironment {
     return streamGraph;
   }
 
+  /**
+   * 根据Transformation构建StreamGraph
+   */
   public StreamGraph getStreamGraph(List<Transformation<?>> transformations) {
     return getStreamGraphGenerator(transformations).generate();
   }
 
+  /**
+   * StreamGraph生成器
+   */
   private StreamGraphGenerator getStreamGraphGenerator(List<Transformation<?>> transformations) {
-    return new StreamGraphGenerator(transformations, config, checkpointConfig, configuration);
+    return new StreamGraphGenerator(transformations);
   }
 
 }

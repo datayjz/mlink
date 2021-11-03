@@ -1,31 +1,34 @@
 package com.mlink.api.datastream;
 
+import com.mlink.api.Boundedness;
 import com.mlink.api.environment.StreamExecutionEnvironment;
+import com.mlink.api.windowing.assigners.GlobalWindows;
+import com.mlink.api.windowing.assigners.WindowAssigner;
+import com.mlink.api.windowing.windows.GlobalWindow;
+import com.mlink.api.windowing.windows.Window;
 import com.mlink.connector.Source;
 import com.mlink.api.operators.source.StreamSourceOperator;
 import com.mlink.typeinfo.TypeInformation;
 
-public class DataStreamSource<OUT> extends SingleOutputStreamOperator<OUT>{
+public class DataStreamSource<T, KEY> extends SingleOutputStreamOperator<T>{
 
     /**
      * 通过Source Operator来创建data stream
      */
     public DataStreamSource(StreamExecutionEnvironment environment,
                             StreamSourceOperator<OUT, ?> operator,
-                            TypeInformation<OUT> outTypeInfo,
-                            String sourceName) {
+                            boolean isParallel,
+                            String sourceName,
+                            Boundedness boundedness) {
 
         super(environment, null);
     }
 
-    /**
-     * 通过Source connector来创建data stream
-     */
-    public DataStreamSource(StreamExecutionEnvironment environment,
-                            Source<OUT> source,
-                            TypeInformation<OUT> outTypeInfo,
-                            String sourceName) {
+    public WindowedStream<T, KEY, GlobalWindow> countWindow(long size, long side) {
+        return window(GlobalWindows.create())
+    }
 
-        super(environment, null);
+    public <W extends Window> WindowedStream<T, KEY, W> window(WindowAssigner<T, W> assigner) {
+        return new WindowedStream<>(this, assigner);
     }
 }

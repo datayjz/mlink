@@ -1,6 +1,8 @@
 package com.mlink.api.datastream;
 
 import com.mlink.api.functions.KeySelector;
+import com.mlink.api.functions.KeyedProcessFunction;
+import com.mlink.typeinfo.TypeInformation;
 
 /**
  * KeyedStream是对DataStream进行partition操作后的生成的数据流。通过在DataStream使用KeySelector来指定key分区。
@@ -15,5 +17,20 @@ public class KeyedStream<IN, KEY> extends DataStream<IN> {
     public KeyedStream(DataStream<IN> dataStream, KeySelector<IN, KEY> keySelector) {
         super(dataStream.getExecutionEnvironment(), null);
         this.keySelector = keySelector;
+    }
+
+    public KeySelector<IN, KEY> getKeySelector() {
+        return keySelector;
+    }
+
+    public <OUT> SingleOutputStreamOperator<OUT> process(KeyedProcessFunction<IN, KEY, OUT> keyedProcessFunction) {
+        TypeInformation<OUT> outputType = null;
+
+        return process(keyedProcessFunction, outputType);
+    }
+
+    public <OUT> SingleOutputStreamOperator<OUT> process(KeyedProcessFunction<IN, KEY, OUT> keyedProcessFunction,
+                                                         TypeInformation<OUT> outputType) {
+        KeyedPro
     }
 }

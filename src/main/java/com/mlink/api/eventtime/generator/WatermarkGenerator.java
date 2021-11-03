@@ -15,7 +15,8 @@ public interface WatermarkGenerator<T> {
 
     /**
      * 定期调用该方法，可以收到调用后发送Watermark。
-     * @param output
+     *
+     * Flink框架会在ExecutionConfig.setAutoWatermarkInterval()间隔来调用该方法。
      */
     void onPeriodicEmit(WatermarkOutput output);
 }

@@ -3,13 +3,17 @@ package com.mlink.api.graph;
 import com.mlink.api.graph.translator.LegacySinkTransformationTranslator;
 import com.mlink.api.graph.translator.LegacySourceTransformationTranslator;
 import com.mlink.api.graph.translator.OneInputTransformationTranslator;
+import com.mlink.api.graph.translator.PartitionTransformTranslator;
 import com.mlink.api.graph.translator.ReduceTransformationTranslator;
+import com.mlink.api.graph.translator.SideOutputTransformationTranslator;
 import com.mlink.api.graph.translator.TransformationTranslator;
 import com.mlink.api.graph.translator.TransformationTranslator.Context;
 import com.mlink.api.transformations.LegacySinkTransformation;
 import com.mlink.api.transformations.LegacySourceTransformation;
 import com.mlink.api.transformations.OneInputTransformation;
+import com.mlink.api.transformations.PartitionTransformation;
 import com.mlink.api.transformations.ReduceTransformation;
+import com.mlink.api.transformations.SideOutputTransformation;
 import com.mlink.api.transformations.Transformation;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +42,8 @@ public class StreamGraphGenerator {
         tmp.put(LegacySourceTransformation.class, new LegacySourceTransformationTranslator<>());
         tmp.put(OneInputTransformation.class, new OneInputTransformationTranslator<>());
         tmp.put(ReduceTransformation.class, new ReduceTransformationTranslator<>());
+        tmp.put(PartitionTransformation.class, new PartitionTransformTranslator<>());
+        tmp.put(SideOutputTransformation.class, new SideOutputTransformationTranslator<>());
         tmp.put(LegacySinkTransformation.class, new LegacySinkTransformationTranslator<>());
 
         translatorMap = new HashMap<>(tmp);
