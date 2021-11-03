@@ -1,9 +1,7 @@
 package com.mlink.api.graph;
 
-import com.mlink.api.operators.StreamOperator;
-import com.mlink.api.operators.factory.SimpleOperatorFactory;
 import com.mlink.api.operators.factory.StreamOperatorFactory;
-import com.mlink.typeinfo.TypeSerializer;
+import com.mlink.runtime.tasks.StreamTask;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,15 +28,16 @@ public class StreamNode {
     private List<StreamEdge> outputEdges = new ArrayList<>();
 
     //该operator对应的执行task
-    private final Class<?> jobVertexClass;
+    private final Class<? extends StreamTask> jobVertexClass;
 
     public StreamNode(Integer id,
                       String operatorName,
                       StreamOperatorFactory<?> operatorFactory,
-                      Class<?> jobVertexClass) {
+                      Class<? extends StreamTask> jobVertexClass) {
         this.id = id;
         this.operatorName = operatorName;
         this.operatorFactory = operatorFactory;
+
         this.jobVertexClass = jobVertexClass;
     }
 

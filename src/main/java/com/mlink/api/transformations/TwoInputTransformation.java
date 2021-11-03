@@ -5,7 +5,6 @@ import com.mlink.api.operators.ChainingStrategy;
 import com.mlink.api.operators.TwoInputStreamOperator;
 import com.mlink.api.operators.factory.SimpleOperatorFactory;
 import com.mlink.api.operators.factory.StreamOperatorFactory;
-import com.mlink.typeinfo.TypeInformation;
 import java.util.List;
 
 /**
@@ -22,22 +21,11 @@ public class TwoInputTransformation<IN1, IN2, OUT> extends PhysicalTransformatio
                                   Transformation<IN2> input2,
                                   String name,
                                   TwoInputStreamOperator<IN1, IN2, OUT> twoInputStreamOperator,
-                                  TypeInformation<OUT> outputType,
                                   int parallelism) {
-        this(input1, input2, name, SimpleOperatorFactory.of(twoInputStreamOperator), outputType,
-            parallelism);
-    }
-
-    public TwoInputTransformation(Transformation<IN1> input1,
-                                  Transformation<IN2> input2,
-                                  String name,
-                                  StreamOperatorFactory<OUT> operatorFactory,
-                                  TypeInformation<OUT> outputType,
-                                  int parallelism) {
-        super(name, outputType, parallelism);
+        super(name, parallelism);
         this.input1 = input1;
         this.input2 = input2;
-        this.operatorFactory = operatorFactory;
+        this.operatorFactory = SimpleOperatorFactory.of(twoInputStreamOperator);
     }
 
     public Transformation<IN1> getInput1() {

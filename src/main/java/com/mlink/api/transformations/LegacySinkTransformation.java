@@ -4,13 +4,12 @@ import com.google.common.collect.Lists;
 import com.mlink.api.operators.ChainingStrategy;
 import com.mlink.api.operators.factory.SimpleOperatorFactory;
 import com.mlink.api.operators.factory.StreamOperatorFactory;
-import com.mlink.api.operators.sink.StreamSinkOperator;
+import com.mlink.api.operators.StreamSink;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * sink connector的Transformation
- * @param <IN>
  */
 public class LegacySinkTransformation<IN> extends PhysicalTransformation<Object> {
 
@@ -20,10 +19,10 @@ public class LegacySinkTransformation<IN> extends PhysicalTransformation<Object>
 
     public LegacySinkTransformation(Transformation<IN> input,
                                     String name,
-                                    StreamSinkOperator<IN> sinkOperator,
+                                    StreamSink<IN> sinkOperator,
                                     int parallelism) {
         //sink无输出，所以输出类型为null
-        super(name, null, parallelism);
+        super(name, parallelism);
         this.input = input;
         this.operatorFactory = SimpleOperatorFactory.of(sinkOperator);
     }

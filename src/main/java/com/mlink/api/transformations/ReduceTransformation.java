@@ -2,9 +2,8 @@ package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
 import com.mlink.api.functions.KeySelector;
-import com.mlink.api.functions.transformation.ReduceFunction;
+import com.mlink.api.functions.ReduceFunction;
 import com.mlink.api.operators.ChainingStrategy;
-import com.mlink.typeinfo.TypeInformation;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,7 +14,6 @@ public class ReduceTransformation<IN, K> extends PhysicalTransformation<IN> {
     private final ReduceFunction<IN> reducer;
 
     private final KeySelector<IN, K> keySelector;
-    private final TypeInformation<K> keyTypeInfo;
 
     private ChainingStrategy chainingStrategy = ChainingStrategy.DEFAULT_CHAINING_STRATEGY;
 
@@ -23,16 +21,13 @@ public class ReduceTransformation<IN, K> extends PhysicalTransformation<IN> {
                                 int parallelism,
                                 Transformation<IN> input,
                                 ReduceFunction<IN> reducer,
-                                KeySelector<IN, K> keySelector,
-                                TypeInformation<K> keyTypeInfo) {
+                                KeySelector<IN, K> keySelector) {
 
-        //reduce输入和输出类型一致
-        super(name, input.getOutputType(), parallelism);
+        super(name, parallelism);
 
         this.input = input;
         this.reducer = reducer;
         this.keySelector = keySelector;
-        this.keyTypeInfo = keyTypeInfo;
     }
 
     @Override

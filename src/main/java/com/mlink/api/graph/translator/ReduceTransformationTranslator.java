@@ -1,12 +1,16 @@
 package com.mlink.api.graph.translator;
 
-import com.mlink.api.functions.KeySelector;
-import com.mlink.api.functions.transformation.ReduceFunction;
 import com.mlink.api.operators.factory.SimpleOperatorFactory;
-import com.mlink.api.operators.transformation.StreamGroupedReduceOperator;
+import com.mlink.api.operators.StreamGroupedReduceOperator;
 import com.mlink.api.transformations.ReduceTransformation;
 import java.util.Collection;
 
+/**
+ * 转换ReduceTransformation，在这里根据执行模式创建不同的reduce operator。
+ *
+ * batch: BatchGroupedReduceOperator
+ * streaming: StreamingGroupedReduceOperator
+ */
 public class ReduceTransformationTranslator<IN, K>
     extends AbstractOneInputTransformationTranslator<IN,IN, ReduceTransformation<IN, K>> {
 

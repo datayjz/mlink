@@ -1,20 +1,17 @@
 package com.mlink.api.transformations;
 
-import com.mlink.typeinfo.TypeInformation;
 import java.util.List;
 
 /**
  * 创建每个DataStream时都会同时创建一个Transformation，该类用于生成StreamGraph
  */
-public abstract class Transformation<OUT> {
+public abstract class Transformation<T> {
 
     //Transformation唯一id
     protected final int id;
 
     //Transformation名称，用于可视化和log
     protected String name;
-
-    protected TypeInformation<OUT> outputType;
 
     //Transformation并行度
     private int parallelism;
@@ -32,10 +29,9 @@ public abstract class Transformation<OUT> {
         return idCounter;
     }
 
-    public Transformation(String name, TypeInformation<OUT> outputType, int parallelism) {
+    public Transformation(String name, int parallelism) {
         this.id = getNewNodeId();
         this.name = name;
-        this.outputType = outputType;
         this.parallelism = parallelism;
     }
 
@@ -52,6 +48,10 @@ public abstract class Transformation<OUT> {
 
     public int getId() {
         return id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getName() {
@@ -80,9 +80,5 @@ public abstract class Transformation<OUT> {
 
     public long getBufferTimeout() {
         return bufferTimeout;
-    }
-
-    public TypeInformation<OUT> getOutputType() {
-        return outputType;
     }
 }

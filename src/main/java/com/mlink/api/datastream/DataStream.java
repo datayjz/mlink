@@ -1,24 +1,16 @@
 package com.mlink.api.datastream;
 
 import com.mlink.api.environment.StreamExecutionEnvironment;
-import com.mlink.api.eventtime.WatermarkStrategy;
 import com.mlink.api.functions.KeySelector;
-import com.mlink.api.functions.ProcessFunction;
-import com.mlink.api.functions.sink.PrintSinkFunction;
-import com.mlink.api.functions.sink.SinkFunction;
-import com.mlink.api.functions.transformation.FilterFunction;
-import com.mlink.api.functions.transformation.FlatMapFunction;
-import com.mlink.api.ProcessOperator;
-import com.mlink.api.operators.sink.StreamSinkOperator;
-import com.mlink.api.operators.transformation.StreamFilterOperator;
-import com.mlink.api.operators.transformation.StreamFlatMapOperator;
+import com.mlink.api.functions.SinkFunction;
+import com.mlink.api.functions.FlatMapFunction;
+import com.mlink.api.operators.StreamSink;
+import com.mlink.api.operators.StreamFlatMap;
 import com.mlink.api.transformations.OneInputTransformation;
-import com.mlink.api.transformations.TimestampAndWatermarksTransformation;
 import com.mlink.api.transformations.Transformation;
-import com.mlink.api.functions.transformation.MapFunction;
+import com.mlink.api.functions.MapFunction;
 import com.mlink.api.operators.OneInputStreamOperator;
-import com.mlink.api.operators.transformation.StreamMapOperator;
-import com.mlink.typeinfo.TypeInformation;
+import com.mlink.api.operators.StreamMap;
 
 /**
  * DataStream API是Flink编写streaming任务的核心API，同时也是SQL和Table API的底层核心支撑。
@@ -31,135 +23,60 @@ public class DataStream<IN> {
 
     public DataStream(StreamExecutionEnvironment environment,
                       Transformation<IN> transformation) {
+
         this.environment = environment;
         this.transformation = transformation;
     }
     //-------------------------------单流处理---------------------------//
-    //reduce需要在keyby后，所以在KeyedStream
 
     public <OUT> SingleOutputStreamOperator<OUT> map(MapFunction<IN, OUT> mapper) {
-        //TODO get type
-        TypeInformation<OUT> outType = null;
-        return transform("Map", outType, new StreamMapOperator<>(mapper));
+        //创建map operator给transformation
+        StreamMap<IN, OUT> streamMapOperator = new StreamMap<>(mapper);
+        return transform("Map", streamMapOperator);
     }
 
     public <OUT> SingleOutputStreamOperator<OUT> flatMap(FlatMapFunction<IN, OUT> flatMapper) {
-        //TODO get type
-        TypeInformation<OUT> outType = null;
-        return transform("Flat map", outType, new StreamFlatMapOperator<>(flatMapper));
-    }
-
-    public SingleOutputStreamOperator<IN> filter(FilterFunction<IN> filter) {
-        return transform("Filter", null, new StreamFilterOperator<>(filter));
-    }
-
-    /**
-     * 专门用于构建单流操作的Transformation
-     */
-    public <OUT> SingleOutputStreamOperator<OUT> transform(String operatorName,
-                                                       TypeInformation<OUT> outTypeInfo,
-                                                       OneInputStreamOperator<IN, OUT> operator) {
-
-        OneInputTransformation<IN, OUT> transformation =
-            new OneInputTransformation<>(this.transformation,
-                operatorName,
-                operator,
-                outTypeInfo,
-                environment.getParallelism());
-
-        return new SingleOutputStreamOperator<>(environment, transformation);
+        //创建flatmap operator 给transform
+        StreamFlatMap<IN, OUT> streamFlatMapOperator = new StreamFlatMap<>(flatMapper);
+        return transform("Flat map", new StreamFlatMap<>(flatMapper));
     }
 
     public <KEY> KeyedStream<IN, KEY> keyBy(KeySelector<IN, KEY> keySelector) {
         return new KeyedStream<>(this, keySelector);
     }
 
-    //-------------------------------source op---------------------------//
-    //source相关DataStream是通过StreamExecutionEnvironment来创建的DataStreamSource
+    //reduce是作用在keyed data stream之上的
 
-    //-------------------------------sink op---------------------------//
+    /**
+     * 专门用于构建单流操作的Transformation
+     */
+    public <OUT> SingleOutputStreamOperator<OUT> transform(String operatorName,
+                                                           OneInputStreamOperator<IN, OUT> operator) {
 
-    public DataStreamSink<IN> print() {
-        PrintSinkFunction<IN> printSinkFunction = new PrintSinkFunction<>();
-        return addSink(printSinkFunction);
+        OneInputTransformation<IN, OUT> transformation =
+            new OneInputTransformation<>(
+                operatorName,
+                environment.getParallelism(),  //注意这里默认使用StreamExecutionEnvironment中的并发度，需要显示设置
+                operator,
+                this.transformation);
+
+        return new SingleOutputStreamOperator<>(environment, transformation);
     }
 
     public DataStreamSink<IN> addSink(SinkFunction<IN> sinkFunction) {
-        StreamSinkOperator<IN> sinkOperator = new StreamSinkOperator<>(sinkFunction);
+        //创建SinkOperator 给DataStreamSink，DataStreamSink在给SinkTransformation
+        StreamSink<IN> sinkOperator = new StreamSink<>(sinkFunction);
         DataStreamSink<IN> sink = new DataStreamSink<>(this, sinkOperator);
         return sink;
     }
 
-    //-------------------------------多流合并---------------------------//
-
-//    /**
-//     * 多流合并，合并的data stream数据类型必须一致
-//     */
-//    public final DataStream<IN> union(DataStream<IN>... streams) {
-//        //将指定流合并到一个union data stream中，该data stream的input就是这些待合并的data stream
-//        List<Transformation<IN>> unionTransforms = new ArrayList<>();
-//        //当前流的Transformation
-//        unionTransforms.add(this.transformation);
-//
-//        for (DataStream<IN> stream : streams) {
-//            if (!getType().equals(stream.getType())) {
-//                throw new IllegalArgumentException();
-//            }
-//            unionTransforms.add(stream.getTransformation());
-//        }
-//
-//        return new DataStream<>(this.environment, new UnionTransformation<>(unionTransforms));
-//    }
-//
-//    /**
-//     * 链接指定DataStream，两个数据流的数据类型可能不一致
-//     */
-//    public <OUT> ConnectedStream<IN, OUT> connect(DataStream<OUT> dataStream) {
-//        return new ConnectedStream<>(this.environment, this, dataStream);
-//    }
-//
-//    /**
-//     * 链接指定BroadcastStream，链接后的数据流可以使用broadcast方法
-//     */
-//    public <R> BroadcastConnectedStream<IN, R> connect(BroadcastStream<R> broadcastStream) {
-//        return new BroadcastConnectedStream<>(this.environment, this, broadcastStream);
-//    }
-
-    public <OUT> SingleOutputStreamOperator<OUT> process(ProcessFunction<IN, OUT> processFunction) {
-        //TODO type extract
-        TypeInformation<OUT> outputType = null;
-        return this.process(processFunction, outputType);
-    }
-
-    public <OUT> SingleOutputStreamOperator<OUT> process(ProcessFunction<IN, OUT> processFunction,
-                                                         TypeInformation<OUT> outputType) {
-
-        ProcessOperator<IN, OUT> processOperator = new ProcessOperator<>(processFunction);
-        return transform("Process", outputType, processOperator);
-    }
 
     public StreamExecutionEnvironment getExecutionEnvironment() {
         return environment;
     }
 
-    //当前data stream数据类型
-    public TypeInformation<IN> getType() {
-        //TODO
-        return null;
-    }
 
     public Transformation<IN> getTransformation() {
         return transformation;
-    }
-
-
-    //-------------------------------Timestamp和Watermark相关---------------------------//
-    public SingleOutputStreamOperator<IN> assignTimestampAndWatermark(
-        WatermarkStrategy<IN> watermarkStrategy) {
-
-        TimestampAndWatermarksTransformation<IN> transformation =
-            new TimestampAndWatermarksTransformation<>("Timestamps/Watermarks", 1,
-                getTransformation(), watermarkStrategy);
-        return new SingleOutputStreamOperator<>(getExecutionEnvironment(), transformation);
     }
 }

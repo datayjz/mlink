@@ -1,5 +1,7 @@
 package com.mlink.runtime.tasks;
 
-public abstract class StreamTask<T> {
+import com.mlink.api.operators.StreamOperator;
+
+public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> {
 
 }

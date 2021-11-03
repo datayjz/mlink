@@ -1,10 +1,10 @@
 package com.mlink.api.datastream;
 
-import com.mlink.api.operators.sink.StreamSinkOperator;
+import com.mlink.api.operators.StreamSink;
 
 public class DataStreamSink<IN> {
 
-    public DataStreamSink(DataStream<IN> inputStream, StreamSinkOperator<IN> sinkOperator) {
+    public DataStreamSink(DataStream<IN> inputStream, StreamSink<IN> sinkOperator) {
 
     }
 }

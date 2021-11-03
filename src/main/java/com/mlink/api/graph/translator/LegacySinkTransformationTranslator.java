@@ -29,16 +29,18 @@ public class LegacySinkTransformationTranslator<IN>
         //sink都是单流输入
         Transformation<?> input = transformation.getInputs().get(0);
 
+        //创建StreamNode
         streamGraph.addSink(
             transformation.getId(),
             transformation.getOperatorFactory(),
             transformation.getName());
 
+        //将并发信息配置到StreamNode中
         streamGraph.setParallelism(sinkId, transformation.getParallelism());
         streamGraph.setMaxParallelism(sinkId, transformation.getMaxParallelism());
 
-        //创建edge
-        for (Integer inputId : context.getStreamNodeIds(transformation)) {
+        //创建edge，edge下游为当前sink，上游为input
+        for (Integer inputId : context.getStreamNodeIds(input)) {
             streamGraph.addEdge(inputId, sinkId);
         }
 

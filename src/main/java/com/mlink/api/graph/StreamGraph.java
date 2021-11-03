@@ -1,15 +1,13 @@
 package com.mlink.api.graph;
 
-import com.mlink.api.common.ExecutionConfig;
-import com.mlink.api.common.OutputTag;
 import com.mlink.api.operators.factory.StreamOperatorFactory;
+import com.mlink.runtime.partitionner.ForwardPartitioner;
+import com.mlink.runtime.partitionner.RebalancePartitioner;
+import com.mlink.runtime.partitionner.StreamPartitioner;
 import com.mlink.api.transformations.StreamExchangeMode;
-import com.mlink.runtime.partitioner.ForwardPartitioner;
-import com.mlink.runtime.partitioner.RebalancePartitioner;
-import com.mlink.runtime.partitioner.StreamPartitioner;
 import com.mlink.runtime.tasks.OneInputStreamTask;
 import com.mlink.runtime.tasks.SourceStreamTask;
-import com.mlink.util.Tuple2;
+import com.mlink.runtime.tasks.StreamTask;
 import com.mlink.util.Tuple3;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,16 +29,14 @@ public class StreamGraph {
     private Set<Integer> sinks;
     //记录虚拟节点信息，<虚拟id, <虚拟算子上游id, 分区器, 数据交换方式>>
     private Map<Integer, Tuple3<Integer, StreamPartitioner<?>, StreamExchangeMode>> virtualPartitionNodes;
-    private Map<Integer, Tuple2<Integer, OutputTag<?>>> virtualSideOutputNodes;
 
     public StreamGraph() {
-
+        clear();
     }
 
     public void clear() {
         streamNodes = new HashMap<>();
         virtualPartitionNodes = new HashMap<>();
-        virtualSideOutputNodes = new HashMap<>();
         sources = new HashSet<>();
         sinks = new HashSet<>();
     }
@@ -72,11 +68,11 @@ public class StreamGraph {
     public  <IN, OUT> void addOperator(Integer vertexID,
                                        StreamOperatorFactory<OUT> operatorFactory,
                                        String operatorName) {
-        Class<?> invokableClass = operatorFactory.isStreamSource() ?
+        Class<? extends StreamTask> taskClass = operatorFactory.isStreamSource() ?
                                   SourceStreamTask.class :
                                   OneInputStreamTask.class;
 
-        addNode(vertexID, operatorFactory, operatorName, invokableClass);
+        addNode(vertexID, operatorFactory, operatorName, taskClass);
     }
 
 
@@ -86,8 +82,8 @@ public class StreamGraph {
     private StreamNode addNode(int vertexId,
                                StreamOperatorFactory<?> operatorFactory,
                                String operatorName,
-                               Class<?> invokableClass) {
-        StreamNode vertex = new StreamNode(vertexId, operatorName, operatorFactory, invokableClass);
+                               Class<? extends StreamTask> taskClass) {
+        StreamNode vertex = new StreamNode(vertexId, operatorName, operatorFactory, taskClass);
         streamNodes.put(vertexId, vertex);
         return vertex;
     }
@@ -96,18 +92,6 @@ public class StreamGraph {
         return streamNodes.get(vertexId);
     }
 
-    /**
-     * 添加虚拟Side output节点
-     */
-    public void addVirtualSideOutputNode(Integer originalId,
-                                         Integer virtualId,
-                                         OutputTag<?> outputTag) {
-        if (virtualSideOutputNodes.containsKey(virtualId)) {
-            throw new IllegalArgumentException();
-        }
-
-        virtualSideOutputNodes.put(virtualId, new Tuple2<>(originalId, outputTag));
-    }
     /**
      * 添加分区虚拟节点(分区只会影响上下游连接方式)
      */

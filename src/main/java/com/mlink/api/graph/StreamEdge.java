@@ -1,7 +1,7 @@
 package com.mlink.api.graph;
 
+import com.mlink.runtime.partitionner.StreamPartitioner;
 import com.mlink.api.transformations.StreamExchangeMode;
-import com.mlink.runtime.partitioner.StreamPartitioner;
 
 public class StreamEdge {
 

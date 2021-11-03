@@ -1,8 +1,8 @@
 package com.mlink.api.functions.context;
 
 /**
- * RuntimeContext是Function执行的上下文信息，每个Function的并行实例都有一个RuntimeContext。
- * RuntimeContext包含了一些静态上下文信息、state
+ * RuntimeContext是Function执行的上下文信息，每个Function的并行实例都有一个RuntimeContext。也就是RuntimeContext是Function
+ * 级别的吗，而不是job级别的。RuntimeContext包含了一些静态上下文信息、state等。
  */
 public interface RuntimeContext {
 

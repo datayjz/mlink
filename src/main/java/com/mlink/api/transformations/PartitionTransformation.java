@@ -1,7 +1,7 @@
 package com.mlink.api.transformations;
 
 import com.google.common.collect.Lists;
-import com.mlink.runtime.partitioner.StreamPartitioner;
+import com.mlink.runtime.partitionner.StreamPartitioner;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,7 +26,7 @@ public class PartitionTransformation<OUT> extends Transformation<OUT> {
                                    StreamPartitioner<OUT> partitioner,
                                    StreamExchangeMode exchangeMode) {
 
-        super("Partition", input.getOutputType(), input.getParallelism());
+        super("Partition", input.getParallelism());
 
         this.input = input;
         this.partitioner = partitioner;

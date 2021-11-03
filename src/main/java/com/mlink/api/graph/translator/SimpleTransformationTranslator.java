@@ -4,7 +4,9 @@ import com.mlink.api.transformations.Transformation;
 import java.util.Collection;
 
 /**
- * 所有TransformationTranslator的基类
+ * 所有TransformationTranslator的基类，这个类设计的比较绕，将translateForBatch和translateForStreaming
+ * 转换为该类内部定义的translateForBatchInternal和translateForStreamingInternal。
+ *
  */
 public abstract class SimpleTransformationTranslator<OUT, T extends Transformation<OUT>>
     implements TransformationTranslator<OUT, T> {

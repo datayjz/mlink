@@ -1,5 +1,7 @@
 package com.mlink.runtime.tasks;
 
-public class OneInputStreamTask<T> extends StreamTask<T>{
+import com.mlink.api.operators.OneInputStreamOperator;
+
+public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamOperator<IN, OUT>>{
 
 }

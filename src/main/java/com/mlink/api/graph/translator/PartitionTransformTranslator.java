@@ -28,7 +28,9 @@ public class PartitionTransformTranslator<IN>
 
         List<Integer> virtualResult = new ArrayList<>();
         for (int inputId : context.getStreamNodeIds(input)) {
+            //虚拟id是最后vertexId之上再重新递增的
             int virtualIds = Transformation.getNewNodeId();
+            //添加分区虚拟节点
             streamGraph.addVirtualPartitionNode(
                 inputId,
                 virtualIds,
@@ -36,6 +38,8 @@ public class PartitionTransformTranslator<IN>
                 transformation.getExchangeMode());
             virtualResult.add(virtualIds);
         }
+        //因为是虚拟节点，不会创建实际的edge
+
         return virtualResult;
     }
 }

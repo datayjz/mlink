@@ -30,12 +30,13 @@ public class LegacySourceTransformationTranslator<OUT>
         StreamGraph streamGraph = context.getStreamGraph();
         int transformationId = transformation.getId();
 
-        //将当前source添加到StreamGraph中
+        //将当前source添加到StreamGraph中，会创建一个StreamNode
         streamGraph.addLegacySource(
             transformationId,
             transformation.getOperatorFactory(),
             transformation.getName());
 
+        //将并发信息设置到StreamNode中
         streamGraph.setParallelism(transformationId, transformation.getParallelism());
         streamGraph.setMaxParallelism(transformationId, transformation.getMaxParallelism());
 
