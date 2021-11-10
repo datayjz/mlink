@@ -1,4 +1,4 @@
-package com.mlink.api.graph.translator;
+package com.mlink.api.graph.streamgraph.translator;
 
 import com.mlink.api.transformations.OneInputTransformation;
 import java.util.Collection;

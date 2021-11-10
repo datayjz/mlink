@@ -1,4 +1,4 @@
-package com.mlink.api.graph;
+package com.mlink.api.graph.streamgraph;
 
 import com.mlink.api.operators.factory.StreamOperatorFactory;
 import com.mlink.runtime.tasks.StreamTask;

@@ -1,11 +1,11 @@
-package com.mlink.api.graph;
+package com.mlink.api.graph.streamgraph;
 
-import com.mlink.api.graph.translator.LegacySinkTransformationTranslator;
-import com.mlink.api.graph.translator.LegacySourceTransformationTranslator;
-import com.mlink.api.graph.translator.OneInputTransformationTranslator;
-import com.mlink.api.graph.translator.PartitionTransformTranslator;
-import com.mlink.api.graph.translator.ReduceTransformationTranslator;
-import com.mlink.api.graph.translator.TransformationTranslator;
+import com.mlink.api.graph.streamgraph.translator.LegacySinkTransformationTranslator;
+import com.mlink.api.graph.streamgraph.translator.LegacySourceTransformationTranslator;
+import com.mlink.api.graph.streamgraph.translator.OneInputTransformationTranslator;
+import com.mlink.api.graph.streamgraph.translator.PartitionTransformTranslator;
+import com.mlink.api.graph.streamgraph.translator.ReduceTransformationTranslator;
+import com.mlink.api.graph.streamgraph.translator.TransformationTranslator;
 import com.mlink.api.transformations.LegacySinkTransformation;
 import com.mlink.api.transformations.LegacySourceTransformation;
 import com.mlink.api.transformations.OneInputTransformation;

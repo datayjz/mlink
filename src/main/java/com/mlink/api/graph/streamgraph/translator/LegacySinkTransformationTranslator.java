@@ -1,6 +1,6 @@
-package com.mlink.api.graph.translator;
+package com.mlink.api.graph.streamgraph.translator;
 
-import com.mlink.api.graph.StreamGraph;
+import com.mlink.api.graph.streamgraph.StreamGraph;
 import com.mlink.api.transformations.LegacySinkTransformation;
 import com.mlink.api.transformations.Transformation;
 import java.util.Collection;

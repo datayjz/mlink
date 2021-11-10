@@ -1,4 +1,4 @@
-package com.mlink.api.graph.translator;
+package com.mlink.api.graph.streamgraph.translator;
 
 import com.mlink.api.operators.factory.SimpleOperatorFactory;
 import com.mlink.api.operators.StreamGroupedReduceOperator;

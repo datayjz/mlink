@@ -1,4 +1,4 @@
-package com.mlink.api.graph;
+package com.mlink.api.graph.streamgraph;
 
 import com.mlink.runtime.partitionner.StreamPartitioner;
 import com.mlink.api.transformations.StreamExchangeMode;

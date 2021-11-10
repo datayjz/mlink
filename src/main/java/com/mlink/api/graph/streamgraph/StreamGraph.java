@@ -1,4 +1,4 @@
-package com.mlink.api.graph;
+package com.mlink.api.graph.streamgraph;
 
 import com.mlink.api.operators.factory.StreamOperatorFactory;
 import com.mlink.runtime.partitionner.ForwardPartitioner;
@@ -19,7 +19,7 @@ import java.util.Set;
  * StreamNode包括了：执行operator、对应的输入和输出edge以及operator所对应的实际执行task class等信息
  * StreamEdge包括了：上下游StreamNode(使用id标识)、partitioner以及数据交换方式StreamExchangeMode。
  */
-public class StreamGraph {
+public class StreamGraph implements Pipeline {
 
     private String jobName;
 
