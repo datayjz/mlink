@@ -1,4 +1,4 @@
-package com.mlink.state;
+package com.mlink.state.api;
 
 /**
  * 所有"分区状态"(partitioned state)的父接口。该接口及其子接口只能应用于KeyedStream，key是系统自动提供的，

@@ -1,4 +1,4 @@
-package com.mlink.state;
+package com.mlink.state.api;
 
 /**
  * 可用于追加的元素的partition state

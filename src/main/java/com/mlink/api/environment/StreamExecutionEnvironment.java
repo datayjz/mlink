@@ -146,6 +146,7 @@ public class StreamExecutionEnvironment {
         StreamSource<OUT, ?> sourceOperator = new StreamSource<>(sourceFunction);
         return new DataStreamSource<>(this, sourceOperator, sourceName);
     }
+    //---------------------------- checkpoint 相关 ----------------------------//
 
     //---------------------------- execute 相关 ----------------------------//
 

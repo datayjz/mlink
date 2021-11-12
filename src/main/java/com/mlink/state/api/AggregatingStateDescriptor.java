@@ -1,4 +1,4 @@
-package com.mlink.state;
+package com.mlink.state.api;
 
 import com.mlink.api.functions.AggregateFunction;
 import com.mlink.typeinfo.TypeInformation;

@@ -1,4 +1,4 @@
-package com.mlink.state;
+package com.mlink.state.api;
 
 /**
  * 专门用于reducing state，基于reduce function

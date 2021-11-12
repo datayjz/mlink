@@ -1,4 +1,4 @@
-package com.mlink.state;
+package com.mlink.state.api;
 
 import com.mlink.typeinfo.TypeInformation;
 import com.mlink.typeinfo.TypeSerializer;
